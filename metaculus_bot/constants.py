@@ -371,7 +371,8 @@ NATIVE_SEARCH_MODEL_ENV: str = "NATIVE_SEARCH_MODEL"
 # Critical-path research; sol->terra 2026-07-17, terra->sol (GPT-6, no Terra successor) 2026-09-22.
 # gpt-6-sol -> gpt-6.1-sol 2026-09-29; request settings unchanged.
 # Receipt: docs/constants.md "NATIVE_SEARCH_DEFAULT_MODEL".
-NATIVE_SEARCH_DEFAULT_MODEL: str = "openai/gpt-6.1-sol"
+# 2026-11-19 free-tier: gpt-6.1-sol -> ernie-5.5-flash-preview:free (no-credit account).
+NATIVE_SEARCH_DEFAULT_MODEL: str = "baidu/ernie-5.5-flash-preview:free"
 NATIVE_SEARCH_MAX_TOKENS: int = 16_000  # no temperature / top_p: temperature=None, so litellm omits it
 # The litellm per-request timeout, 240->360 on 2026-05-17. Receipt: docs/constants.md "NATIVE_SEARCH_TIMEOUT".
 NATIVE_SEARCH_TIMEOUT: int = 360
@@ -458,7 +459,8 @@ URL_CONTEXT_SIZE_GATE_TOKENS: int = 100_000
 
 # "Luna is dirt cheap and medium will still be fast enough" (operator). luna->GPT-6 luna 2026-09-22,
 # effort unchanged pending a decision. Receipt: docs/constants.md "PAGE_DIGEST_EXTRACTOR_MODEL".
-PAGE_DIGEST_EXTRACTOR_MODEL: str = "openrouter/openai/gpt-6-luna"
+# 2026-11-19 free-tier: gpt-6-luna -> ernie-5.5-flash-preview:free (no-credit account).
+PAGE_DIGEST_EXTRACTOR_MODEL: str = "openrouter/baidu/ernie-5.5-flash-preview:free"
 PAGE_DIGEST_EXTRACTOR_EFFORT: str = "medium"
 # 20 -> 30 s 2026-09-22; gpt-6-luna digests measured 1.4-4.8 s. Receipt: docs/constants.md "PAGE_DIGEST_EXTRACTOR_TIMEOUT_S".
 PAGE_DIGEST_EXTRACTOR_TIMEOUT_S: float = 30.0
@@ -548,7 +550,8 @@ GAP_FILL_ENABLED_ENV: str = "GAP_FILL_ENABLED"
 # Non-grounded decomposition under a tight wall. terra->sol (GPT-6, no Terra successor) 2026-09-22.
 # gpt-6-sol -> gpt-6.1-sol 2026-09-29; request settings unchanged.
 # Receipt: docs/constants.md "GAP_FILL_ANALYZER_MODEL".
-GAP_FILL_ANALYZER_MODEL: str = "openrouter/openai/gpt-6.1-sol"
+# 2026-11-19 free-tier: gpt-6.1-sol -> ernie-5.5-flash-preview:free (no-credit account).
+GAP_FILL_ANALYZER_MODEL: str = "openrouter/baidu/ernie-5.5-flash-preview:free"
 # 5 -> 4 on 2026-07-20; do NOT go below 4. Receipt: docs/constants.md "GAP_FILL_MAX_GAPS".
 GAP_FILL_MAX_GAPS: int = 4
 GAP_FILL_ANALYZER_TIMEOUT: int = 120  # tight, so a hung analyzer cannot hold a research slot
@@ -558,7 +561,8 @@ GAP_FILL_MIN_RESEARCH_CHARS: int = 200  # under this every provider likely soft-
 # Moved off grounded Gemini 2026-06-25; sol->terra 2026-07-20; terra->sol (GPT-6, no Terra successor)
 # 2026-09-22; gpt-6-sol -> gpt-6.1-sol 2026-09-29; sol -> gpt-6.1-terra 2026-10-26.
 # Receipt: docs/constants.md "GAP_FILL_RESOLVER_MODEL".
-GAP_FILL_RESOLVER_MODEL: str = "openai/gpt-6.1-terra"
+# 2026-11-19 free-tier: gpt-6.1-terra -> ernie-5.5-flash-preview:free (no-credit account).
+GAP_FILL_RESOLVER_MODEL: str = "baidu/ernie-5.5-flash-preview:free"
 GAP_FILL_RESOLVER_REASONING_EFFORT: str = "low"
 
 # --- Agentic gap-fill v2 (bounded research loop) ---
@@ -599,7 +603,8 @@ FINANCIAL_DATA_ENABLED_ENV: str = "FINANCIAL_DATA_ENABLED"
 FRED_API_KEY_ENV: str = "FRED_API_KEY"
 # Capability-saturated, so the cheapest capable tier. luna->GPT-6 luna 2026-09-22.
 # Receipt: docs/constants.md "FINANCIAL_CLASSIFIER_MODEL".
-FINANCIAL_CLASSIFIER_MODEL: str = "openrouter/openai/gpt-6-luna"
+# 2026-11-19 free-tier: gpt-6-luna -> ernie-5.5-flash-preview:free (no-credit account).
+FINANCIAL_CLASSIFIER_MODEL: str = "openrouter/baidu/ernie-5.5-flash-preview:free"
 FINANCIAL_CLASSIFIER_TIMEOUT: int = 30
 # Never spent as a bare period="Nd". Receipt: docs/constants.md "FINANCIAL_YFINANCE_LOOKBACK_DAYS".
 FINANCIAL_YFINANCE_LOOKBACK_DAYS: int = 390
@@ -690,7 +695,8 @@ BACKTEST_DEFAULT_MIN_FORECASTERS: int = 40
 BACKTEST_OVERFETCH_RATIO: int = 3
 # Saturated backtest-only screen, cheapest capable tier. luna->GPT-6 luna 2026-09-22.
 # Receipt: docs/constants.md "LEAKAGE_DETECTOR_MODEL".
-LEAKAGE_DETECTOR_MODEL: str = "openrouter/openai/gpt-6-luna"
+# 2026-11-19 free-tier: gpt-6-luna -> ernie-5.5-flash-preview:free (no-credit account).
+LEAKAGE_DETECTOR_MODEL: str = "openrouter/baidu/ernie-5.5-flash-preview:free"
 
 # --- Per-type stacking gates ---
 

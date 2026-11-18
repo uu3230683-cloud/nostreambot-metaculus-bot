@@ -539,8 +539,12 @@ class TestConstants:
     """The knobs, pinned to the receipts in docs/constants.md."""
 
     def test_model_is_an_openrouter_slug_so_the_builder_routes_its_key(self) -> None:
-        """A bare ``openai/`` slug would dial OpenAI directly on a key this repo does not carry."""
-        assert PAGE_DIGEST_EXTRACTOR_MODEL.startswith("openrouter/openai/")
+        """A bare ``openai/`` slug would dial OpenAI directly on a key this repo does not carry.
+
+        The pin is the ``openrouter/`` prefix, not the vendor: the free-tier
+        fork (2026-11-19) runs this slot on a Baidu model.
+        """
+        assert PAGE_DIGEST_EXTRACTOR_MODEL.startswith("openrouter/")
 
     def test_effort_is_medium_by_operator_decision(self) -> None:
         assert PAGE_DIGEST_EXTRACTOR_EFFORT == "medium"

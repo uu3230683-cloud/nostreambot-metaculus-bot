@@ -8,7 +8,7 @@ from typing import Any
 
 from forecasting_tools import GeneralLlm
 
-from metaculus_bot.constants import GEMINI_OUTPUT_TOKEN_LIMIT, OPENROUTER_OUTPUT_TOKEN_LIMIT
+from metaculus_bot.constants import OPENROUTER_OUTPUT_TOKEN_LIMIT
 from metaculus_bot.fallback_openrouter import build_llm_with_openrouter_fallback
 
 __all__ = [
@@ -94,60 +94,39 @@ def _forecaster_slot(model: str, **kwargs: Any) -> GeneralLlm:
 # filtered per vendor prefix (openai/, anthropic/, google/, x-ai/); what to check on the
 # result is in docs/operations.md "Season-start checklist". Any change here is a config-era
 # boundary for residual analysis, so make it once, before the first question.
+# FREE-TIER ROSTER (2026-11-19, this fork only — upstream runs paid flagships).
+# Resolved from a LIVE OpenRouter models read + live probes on 2026-11-19; the
+# free lineup rotates every few weeks, so re-verify before trusting this list.
+# Two slots, not three: the free tier allows 50 requests/day TOTAL, and a
+# 5-question batch at ~6 calls/question already spends ~30 of them. A lone
+# survivor still publishes (MIN_FORECASTERS_TO_PUBLISH=1).
+#
+# Live-probed 2026-11-19 (plain chat completion, $0):
+# - nvidia/nemotron-3-ultra-550b-a55b:free — answered, 550B MoE, 1M ctx.
+# - baidu/ernie-5.5-flash-preview:free — answered, 1M ctx.
+# Rejected the same day: thinkingmachines/inkling-2-small:free ("only
+# available on agentic harnesses" — not callable via the API),
+# google/gemma-4-31b-it:free and gemma-4-26b-a4b-it:free ("Provider returned
+# error", twice each — the Google free route is down as of this writing;
+# gemma-4-31b was this repo's bake-off parser winner, so re-probe it before
+# any future utility swap).
+#
+# Effort: both slots run xhigh — forecast quality is what earns prize money,
+# and on the free tier the only cost of xhigh is latency, bounded by the 480s
+# request timeout and the 600s FORECASTER_SOFT_DEADLINE. max_tokens stays at
+# the 128k OPENROUTER_OUTPUT_TOKEN_LIMIT default: the effective cap is
+# min(ours, the route's), so a lower value could only truncate a reasoning
+# trace the route would otherwise have completed; the extraction ladder +
+# parser fallback covers a truncation if the route caps low.
 FORECASTER_LLMS: list[GeneralLlm] = [
-    # 2026-07-20: forecaster roster dropped from 6 to a 3-member latest-per-vendor
-    # triple (1 OpenAI / 1 Anthropic / 1 Google). This is the SECOND roster change
-    # on 2026-07-20 and supersedes the morning fable-5 → opus-4.7 swap (7a76df6) as
-    # the config-era boundary for residual analysis. Removed: gpt-5.5,
-    # claude-opus-4.7, grok-4.5. Two adversarially-verified analyses
-    # (scratch/ensemble_3member_audit_2026-07-20/ +
-    # scratch/ensemble_power_model_2026-07-20/) found the triple non-inferior on
-    # binary/MC and only a fragile numeric lean toward the full roster (+3.24,
-    # 95% CI [-2.5, +9.1], P(loss>1pt/Q)=0.80, driven by 2 questions) — accepted as
-    # a ship-and-watch bet; see FUTURE.md "Frozen-triple numeric watch". Dropping
-    # grok (x-ai, 404s on the donated key) also ends routine personal-key forecaster
-    # spend: only the gemini-3.1-pro-preview personal-key PIN bills
-    # OPENROUTER_API_KEY now; the other two slots route via the donated key.
-    # (Dates anchor config eras for residual analysis.)
-    #
-    # OpenAI flagship. 2026-07-20: effort xhigh -> high. The
-    # reasoning-effort audit (scratch/reasoning_effort_audit_2026-07-20/) found
-    # default->high clearly worth it but high->xhigh UNMEASURED, so we stop paying
-    # the unmeasured premium here (the three slots measure within 12% of each other,
-    # $0.24 to $0.27 a question, 2026-09-09). opus-4.8 keeps xhigh below as the remaining premium bet
-    # (FUTURE.md "Price the high->xhigh reasoning-effort premium"). (2026-07-15
-    # had bumped this high -> xhigh.) GPT-6.1 Sol supports low, medium, high,
-    # xhigh and max reasoning effort per the official model documentation.
-    # 2026-09-22: sol -> gpt-6-sol (GPT-6 release) and high -> xhigh (operator), matching the
-    # Anthropic slot; a single prod-prompt timing probe checked it against FORECASTER_SOFT_DEADLINE.
-    # 2026-09-29: gpt-6-sol -> gpt-6.1-sol; effort and deadline settings unchanged.
     _forecaster_slot(
-        "openrouter/openai/gpt-6.1-sol",
+        "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
         reasoning={"effort": "xhigh"},
     ),
-    # Anthropic slot. 2026-07-15: enabled:True (provider-default adaptive thinking)
-    # -> explicit effort=xhigh. Anthropic also exposes "max" one tier above xhigh —
-    # held back deliberately for latency: unbounded adaptive thinking caused silent
-    # FORECASTER_SOFT_DEADLINE stalls on the retired opus-4.6 slot, e.g. Q14333 on
-    # 2026-05-07.
-    # 2026-09-22: opus-4.8 -> opus-5.5 (Anthropic release), and extra_body={"verbosity": "high"}
-    # REMOVED. On Anthropic, OpenRouter maps BOTH verbosity and reasoning.effort onto the one
-    # output_config.effort knob and "verbosity wins if both are passed" (OpenRouter Claude 4.7
-    # migration guide), so this slot had been running at effort HIGH, not the xhigh declared here,
-    # since at least 2026-02. Never send verbosity alongside reasoning.effort on an Anthropic slot.
     _forecaster_slot(
-        "openrouter/anthropic/claude-opus-5.5",
+        "openrouter/baidu/ernie-5.5-flash-preview:free",
         reasoning={"effort": "xhigh"},
     ),
-    # Google slot. No explicit reasoning-effort kwarg; use provider defaults (medium).
-    # 2026-11-14: back to gemini-4-argon after gemini-4-carbon at effort=high (PR #83, 2026-11-13) hit
-    # FORECASTER_SOFT_DEADLINE on all 3 questions it saw (Q46727, Q46728, Mantic 879), while Argon had
-    # finished 5 of 5 the day before in 69-96s. See docs/roster_history.md 2026-11-14.
-    # Pinned to the personal key: the donated account's Google AI Studio BYOK
-    # integration returned quota 0 for Argon in the 2026-10-13 live probe.
-    # Some Argon routes advertise a much larger limit, but 65,536 is the
-    # verified ceiling shared by all routes; preserve provider fallback options.
-    _forecaster_slot("openrouter/google/gemini-4-argon", max_tokens=GEMINI_OUTPUT_TOKEN_LIMIT),
 ]
 
 
@@ -181,7 +160,8 @@ FORECASTER_MODEL_NAMES: list[str] = [_forecaster_display_name(llm) for llm in FO
 # 2026-09-29: gpt-6-sol -> gpt-6.1-sol; role settings unchanged.
 # 2026-10-26: gpt-6.1-sol -> gpt-6.1-terra (half Sol's price) now that GPT-6.1 has a Terra tier; effort unchanged.
 SUMMARIZER_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
-    "openrouter/openai/gpt-6.1-terra",
+    # 2026-11-19 free-tier: gpt-6.1-terra -> ernie-5.5-flash-preview:free (no-credit account).
+    "openrouter/baidu/ernie-5.5-flash-preview:free",
     role="summarizer",
     reasoning={"effort": "low"},
     **{**UTILITY_MODEL_CONFIG, "allowed_tries": 1},
@@ -197,7 +177,9 @@ SUMMARIZER_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
 # 2026-09-22: gpt-5.6-luna -> gpt-6-luna (GPT-6 release), now $0.10/$0.50 per 1M.
 # Effort unchanged at low.
 PARSER_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
-    "openrouter/openai/gpt-6-luna",
+    # 2026-11-19 free-tier: gpt-6-luna -> ernie-5.5-flash-preview:free (no-credit account).
+    # (gemma-4-31b-it:free was the bake-off winner but its free route is down as of 2026-11-19.)
+    "openrouter/baidu/ernie-5.5-flash-preview:free",
     role="parser",
     reasoning={"effort": "low"},
     **UTILITY_MODEL_CONFIG,
@@ -230,7 +212,8 @@ STACKER_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
     # OpenRouter effort enum: none/minimal/low/medium/high/xhigh/max.
     # effort=xhigh matches the forecaster slot; "max" (one tier above xhigh) is
     # deliberately held back for latency — the stacker runs under STACKER_SOFT_DEADLINE.
-    "openrouter/anthropic/claude-opus-5.5",
+    # 2026-11-19 free-tier: claude-opus-5.5 -> nemotron-3-ultra-550b-a55b:free (no-credit account).
+    "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
     role="stacker",
     reasoning={"effort": "xhigh"},
     **{**REASONING_MODEL_CONFIG, "allowed_tries": 1},
@@ -245,7 +228,8 @@ STACKER_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
 # Anthropic stall doesn't take both attempts down. Tighter timeout and single try
 # since we're already running late on the critical path by the time this fires.
 STACKER_FALLBACK_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
-    "openrouter/openai/gpt-6.1-sol",
+    # 2026-11-19 free-tier: gpt-6.1-sol -> ernie-5.5-flash-preview:free (no-credit account).
+    "openrouter/baidu/ernie-5.5-flash-preview:free",
     role="stacker_fallback",
     reasoning={"effort": "xhigh"},
     **{**REASONING_MODEL_CONFIG, "allowed_tries": 1, "timeout": 300},
@@ -292,7 +276,8 @@ STACKER_FALLBACK_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
 # RANKED_ARM_RESULTS.md). No max_tokens since 2026-09-22 (operator): a TRUNCATED ranking is a
 # fail-open that loses the whole ranking, and MARKET_RANKER_WALL_TIMEOUT already bounds a runaway.
 MARKET_RANKER_LLM_CONFIG: dict = {
-    "model": "openrouter/openai/gpt-6-luna",
+    # 2026-11-19 free-tier: gpt-6-luna -> ernie-5.5-flash-preview:free (no-credit account).
+    "model": "openrouter/baidu/ernie-5.5-flash-preview:free",
     "role": "market_ranker",
     "temperature": None,
     "reasoning_effort": "low",
@@ -305,7 +290,8 @@ MARKET_RANKER_LLM_CONFIG: dict = {
 # a deterministic query set, so its failure costs recall nothing. Measured completion max 588
 # tokens including reasoning. No max_tokens since 2026-09-22: MARKET_QUERY_AUTHOR_WALL_TIMEOUT bounds it.
 MARKET_QUERY_AUTHOR_LLM_CONFIG: dict = {
-    "model": "openrouter/openai/gpt-6-luna",
+    # 2026-11-19 free-tier: gpt-6-luna -> ernie-5.5-flash-preview:free (no-credit account).
+    "model": "openrouter/baidu/ernie-5.5-flash-preview:free",
     "role": "market_query_author",
     "temperature": None,
     "reasoning_effort": "low",
@@ -329,7 +315,8 @@ MARKET_QUERY_AUTHOR_LLM_CONFIG: dict = {
 # moves to Sol 6 at the same (low) effort it ran at.
 # 2026-09-29: gpt-6-sol -> gpt-6.1-sol; role settings unchanged.
 DISAGREEMENT_ANALYZER_LLM: GeneralLlm = build_llm_with_openrouter_fallback(
-    "openrouter/openai/gpt-6.1-sol",
+    # 2026-11-19 free-tier: gpt-6.1-sol -> ernie-5.5-flash-preview:free (no-credit account).
+    "openrouter/baidu/ernie-5.5-flash-preview:free",
     role="crux_analyzer",
     reasoning={"effort": "low"},
     **{**UTILITY_MODEL_CONFIG, "allowed_tries": 1},
