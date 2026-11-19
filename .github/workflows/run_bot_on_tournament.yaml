@@ -118,8 +118,8 @@ jobs:
           # this default in metaculus_bot/__init__.py; pinned here for parity.
           DISABLE_AIOHTTP_TRANSPORT: 'true'
           # Native search runs in parallel with AskNews; model defaults to
-          # openai/gpt-6.1-sol (low effort, verbosity=low, 360s) per constants.py.
-          NATIVE_SEARCH_ENABLED: 'true'
+          # ernie-5.5-flash-preview:free (low effort, 360s) per constants.py.
+          NATIVE_SEARCH_ENABLED: 'false'  # FREE-TIER 2026-11-19: the web-search plugin 402s on a $0 account.
           FINANCIAL_DATA_ENABLED: 'true'
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           # SEC EDGAR fair-access contact: the User-Agent the EDGAR client sends. Unset, the
@@ -130,7 +130,7 @@ jobs:
           # in CI as secrets.GEMINI_API_KEY). The grounded-search side has no
           # donated/shared path — Google AI Studio doesn't offer one.
           GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_SEARCH_ENABLED: 'true'
+          GEMINI_SEARCH_ENABLED: 'false'  # FREE-TIER 2026-11-19: no GOOGLE_API_KEY configured.
           # OpenRouter Gemini routing (forecaster, stacker, summarizer when the
           # ensemble includes a Google model). When 'true' (default since
           # 2026-06-16), Gemini OpenRouter calls prefer the Metaculus-donated
@@ -140,13 +140,15 @@ jobs:
           # (DONATED_KEY_BLOCKED_GOOGLE_MODELS blocklist; no donated attempt, no
           # 429) pending the Metaculus BYOK fix.
           GEMINI_USE_DONATED_OPENROUTER_KEY: 'true'
+          # FREE-TIER 2026-11-19: this deployment has no donated key — route everything to the personal free key.
+          DONATED_OPENROUTER_KEY_ENABLED: 'false'
           # Second-pass gap-fill: analyzer identifies gaps in first-pass research,
           # parallel grounded Gemini searches resolve each. Fails soft.
-          GAP_FILL_ENABLED: 'true'
+          GAP_FILL_ENABLED: 'false'  # FREE-TIER 2026-11-19: resolvers need the paid web plugin; analyzer alone is useless.
           # Agentic gap-fill v2 (bounded research loop; runs concurrently with
           # v1 when both are on). ON since 2026-07-17 after smoke + blind driver
           # eval + Exa confirmation; v1 stays on for an overlap window.
-          GAP_FILL_V2_ENABLED: 'true'
+          GAP_FILL_V2_ENABLED: 'false'  # FREE-TIER 2026-11-19: up to 30 tool calls/question; unaffordable at 50 free req/day.
           # Probabilistic tools post-processor: deterministic probability math
           # injected into per-forecaster rationales and the stacker's view.
           # Retired (C2): tier-2 scaffold fields no longer demanded in prompts;
